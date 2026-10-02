@@ -476,7 +476,7 @@ function requestRoomById(){
 async function joinRoomById(roomId){
     try{
         const response=await fetch(
-            "`${BACKEND_URL}/rooms/join`",
+            `${BACKEND_URL}/rooms/join`,
             {
                 method:"POST",
                 headers:{
