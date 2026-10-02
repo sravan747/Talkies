@@ -16,86 +16,48 @@ let selectedVisibility="public";
 let pendingAction=null;
 
 const peers=new Map();
+const remoteAudios=new Map();
+const pendingIceCandidates=new Map();
 
 const homeScreen=document.querySelector("#homeScreen");
 const roomScreen=document.querySelector("#roomScreen");
 const roomsList=document.querySelector("#roomsList");
-
 const roomNameInput=document.querySelector("#roomName");
 const joinRoomInput=document.querySelector("#joinRoomId");
-
 const openCreateButton=document.querySelector("#openCreate");
 const createButton=document.querySelector("#createRoom");
 const closeCreateButton=document.querySelector("#closeCreateModal");
-
 const refreshRoomsButton=document.querySelector("#refreshRooms");
 const focusJoinButton=document.querySelector("#focusJoin");
 const joinButton=document.querySelector("#joinRoom");
-
 const nameModal=document.querySelector("#nameModal");
 const nameInput=document.querySelector("#nameInput");
 const saveNameButton=document.querySelector("#saveName");
 const closeNameModal=document.querySelector("#closeNameModal");
-
-const visibilityOptions=document.querySelectorAll(
-    ".visibility-option"
-);
-
+const visibilityOptions=document.querySelectorAll(".visibility-option");
 const roomTitle=document.querySelector("#roomTitle");
-const roomVisibilityLabel=document.querySelector(
-    "#roomVisibilityLabel"
-);
-const participantCount=document.querySelector(
-    "#participantCount"
-);
-const roomLiveCount=document.querySelector(
-    "#roomLiveCount"
-);
+const roomVisibilityLabel=document.querySelector("#roomVisibilityLabel");
+const participantCount=document.querySelector("#participantCount");
+const roomLiveCount=document.querySelector("#roomLiveCount");
 const roomRole=document.querySelector("#roomRole");
-
 const speakers=document.querySelector("#speakers");
-const requestSpeakButton=document.querySelector(
-    "#requestSpeak"
-);
+const requestSpeakButton=document.querySelector("#requestSpeak");
 const micButton=document.querySelector("#micButton");
 const micStatus=document.querySelector("#micStatus");
-
 const inviteLink=document.querySelector("#inviteLink");
-const copyInviteButton=document.querySelector(
-    "#copyInvite"
-);
-
+const copyInviteButton=document.querySelector("#copyInvite");
 const hostPanel=document.querySelector("#hostPanel");
 const requests=document.querySelector("#requests");
 const endRoomButton=document.querySelector("#endRoom");
 const leaveButton=document.querySelector("#leaveRoom");
-
 const chatInput=document.querySelector("#chatInput");
-const sendMessageButton=document.querySelector(
-    "#sendMessage"
-);
-const chatMessages=document.querySelector(
-    "#chatMessages"
-);
-
-const remoteAudio=document.querySelector(
-    "#remoteAudio"
-);
-
-const toastContainer=document.querySelector(
-    "#toastContainer"
-);
-
-const createModal=document.querySelector(
-    "#createModal"
-);
+const sendMessageButton=document.querySelector("#sendMessage");
+const chatMessages=document.querySelector("#chatMessages");
+const toastContainer=document.querySelector("#toastContainer");
+const createModal=document.querySelector("#createModal");
 
 socket.on("connect",()=>{
-    console.log(
-        "Connected to Talkies server:",
-        socket.id
-    );
-
+    console.log("Connected to Talkies server:",socket.id);
     loadRooms();
 
     if(userName){
@@ -104,10 +66,7 @@ socket.on("connect",()=>{
 });
 
 socket.on("connect_error",error=>{
-    console.error(
-        "Socket connection failed:",
-        error
-    );
+    console.error("Socket connection failed:",error);
 
     showToast(
         "Connection problem",
@@ -117,6 +76,10 @@ socket.on("connect_error",error=>{
 
 setTimeout(()=>{
     const intro=document.querySelector("#intro");
+
+    if(!intro){
+        return;
+    }
 
     intro.style.opacity="0";
     intro.style.visibility="hidden";
@@ -128,40 +91,41 @@ setTimeout(()=>{
 
 function showToast(title,message=""){
     const toast=document.createElement("div");
-
     toast.className="toast";
 
     const strong=document.createElement("strong");
-
     strong.textContent=title;
-
     toast.appendChild(strong);
 
     if(message){
         const text=document.createElement("div");
-
         text.textContent=message;
-
         toast.appendChild(text);
     }
 
-    toastContainer.appendChild(toast);
-
-    setTimeout(()=>{
-        toast.classList.add("out");
+    if(toastContainer){
+        toastContainer.appendChild(toast);
 
         setTimeout(()=>{
-            toast.remove();
-        },300);
-    },3000);
+            toast.classList.add("out");
+
+            setTimeout(()=>{
+                toast.remove();
+            },300);
+        },3000);
+    }
 }
 
 function openModal(modal){
-    modal.classList.add("show");
+    if(modal){
+        modal.classList.add("show");
+    }
 }
 
 function closeModal(modal){
-    modal.classList.remove("show");
+    if(modal){
+        modal.classList.remove("show");
+    }
 }
 
 function askName(action){
@@ -189,35 +153,26 @@ function saveName(){
 
     userName=name.substring(0,30);
 
-    localStorage.setItem(
-        "talkiesName",
-        userName
-    );
+    localStorage.setItem("talkiesName",userName);
 
-    socket.emit(
-        "set-name",
-        userName
-    );
+    socket.emit("set-name",userName);
 
     closeModal(nameModal);
 
     if(pendingAction){
         const action=pendingAction;
-
         pendingAction=null;
-
         action();
     }
 }
 
 function createInviteLink(roomId){
-    return`${window.location.origin}${window.location.pathname}?room=${roomId}`;
+    return `${window.location.origin}${window.location.pathname}?room=${roomId}`;
 }
 
 async function loadRooms(){
     try{
-        const response=await fetch(`${BACKEND_URL}/rooms`)
-
+        const response=await fetch(`${BACKEND_URL}/rooms`);
         const rooms=await response.json();
 
         renderRooms(rooms);
@@ -241,34 +196,23 @@ function renderRooms(rooms){
 
     rooms.forEach((room,index)=>{
         const card=document.createElement("article");
-
         card.className="room-card";
-
-        card.style.animationDelay=
-            `${index*50}ms`;
+        card.style.animationDelay=`${index*50}ms`;
 
         const top=document.createElement("div");
-
         top.className="room-topline";
 
         const live=document.createElement("div");
-
         live.className="room-status";
 
         const dot=document.createElement("span");
-
         dot.className="live-dot";
 
         live.appendChild(dot);
-
-        live.appendChild(
-            document.createTextNode("LIVE")
-        );
+        live.appendChild(document.createTextNode("LIVE"));
 
         const type=document.createElement("div");
-
         type.className="room-type";
-
         type.textContent=
             room.visibility==="private"
                 ?"PRIVATE"
@@ -278,15 +222,12 @@ function renderRooms(rooms){
         top.appendChild(type);
 
         const title=document.createElement("h3");
-
         title.textContent=room.name;
 
         const meta=document.createElement("div");
-
         meta.className="room-meta";
 
         const count=document.createElement("span");
-
         count.textContent=
             room.participantCount===1
                 ?"1 person"
@@ -295,30 +236,21 @@ function renderRooms(rooms){
         meta.appendChild(count);
 
         const button=document.createElement("button");
-
         button.className="button secondary";
-
         button.textContent=
             room.visibility==="private"
                 ?"Request to join"
                 :"Join room";
 
-        button.addEventListener(
-            "click",
-            ()=>{
-                askName(()=>{
-                    if(room.visibility==="private"){
-                        requestPrivateRoom(
-                            room.roomId
-                        );
-                    }else{
-                        joinPublicRoom(
-                            room.roomId
-                        );
-                    }
-                });
-            }
-        );
+        button.addEventListener("click",()=>{
+            askName(()=>{
+                if(room.visibility==="private"){
+                    requestPrivateRoom(room.roomId);
+                }else{
+                    joinPublicRoom(room.roomId);
+                }
+            });
+        });
 
         card.appendChild(top);
         card.appendChild(title);
@@ -352,32 +284,25 @@ async function createRoom(){
     }
 
     try{
-        const response=await fetch(`${BACKEND_URL}/rooms`,
-            {
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify({
-                    roomName:name,
-                    visibility:selectedVisibility
-                })
-            }
-        );
+        const response=await fetch(`${BACKEND_URL}/rooms`,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                roomName:name,
+                visibility:selectedVisibility
+            })
+        });
 
         const data=await response.json();
 
         if(!response.ok){
-            showToast(
-                "Could not create room",
-                data.message
-            );
-
+            showToast("Could not create room",data.message);
             return;
         }
 
         roomNameInput.value="";
-
         closeModal(createModal);
 
         if(selectedVisibility==="private"){
@@ -391,7 +316,6 @@ async function createRoom(){
                 data.roomName
             );
         }
-
     }catch(error){
         console.error(error);
 
@@ -404,26 +328,20 @@ async function createRoom(){
 
 async function joinPublicRoom(roomId){
     try{
-        const response=await fetch(`${BACKEND_URL}/rooms/join`,
-            {
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify({
-                    roomId
-                })
-            }
-        );
+        const response=await fetch(`${BACKEND_URL}/rooms/join`,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                roomId
+            })
+        });
 
         const data=await response.json();
 
         if(!response.ok){
-            showToast(
-                "Room unavailable",
-                data.message
-            );
-
+            showToast("Room unavailable",data.message);
             return;
         }
 
@@ -436,7 +354,6 @@ async function joinPublicRoom(roomId){
             data.roomId,
             data.roomName
         );
-
     }catch(error){
         console.error(error);
 
@@ -448,13 +365,10 @@ async function joinPublicRoom(roomId){
 }
 
 function requestPrivateRoom(roomId){
-    socket.emit(
-        "request-join",
-        {
-            roomId,
-            name:userName
-        }
-    );
+    socket.emit("request-join",{
+        roomId,
+        name:userName
+    });
 }
 
 function requestRoomById(){
@@ -475,33 +389,25 @@ function requestRoomById(){
 
 async function joinRoomById(roomId){
     try{
-        const response=await fetch(
-            `${BACKEND_URL}/rooms/join`,
-            {
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify({
-                    roomId
-                })
-            }
-        );
+        const response=await fetch(`${BACKEND_URL}/rooms/join`,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                roomId
+            })
+        });
 
         const data=await response.json();
 
         if(!response.ok){
-            showToast(
-                "Room unavailable",
-                data.message
-            );
-
+            showToast("Room unavailable",data.message);
             return;
         }
 
         if(data.visibility==="private"){
             requestPrivateRoom(roomId);
-
             return;
         }
 
@@ -509,7 +415,6 @@ async function joinRoomById(roomId){
             data.roomId,
             data.roomName
         );
-
     }catch(error){
         console.error(error);
 
@@ -529,29 +434,19 @@ function openPublicRoom(roomId,name){
     roomScreen.style.display="block";
 
     roomTitle.textContent=name;
-
-    roomVisibilityLabel.textContent=
-        "PUBLIC ROOM";
-
+    roomVisibilityLabel.textContent="PUBLIC ROOM";
     roomRole.textContent="Listener";
 
-    inviteLink.value=
-        createInviteLink(roomId);
+    inviteLink.value=createInviteLink(roomId);
 
     resetChat();
 
-    socket.emit(
-        "set-name",
-        userName
-    );
+    socket.emit("set-name",userName);
 
-    socket.emit(
-        "join-room",
-        {
-            roomId,
-            name:userName
-        }
-    );
+    socket.emit("join-room",{
+        roomId,
+        name:userName
+    });
 
     window.scrollTo({
         top:0,
@@ -568,29 +463,19 @@ function openPrivateRoom(roomId,name){
     roomScreen.style.display="block";
 
     roomTitle.textContent=name;
-
-    roomVisibilityLabel.textContent=
-        "PRIVATE ROOM";
-
+    roomVisibilityLabel.textContent="PRIVATE ROOM";
     roomRole.textContent="Host";
 
-    inviteLink.value=
-        createInviteLink(roomId);
+    inviteLink.value=createInviteLink(roomId);
 
     resetChat();
 
-    socket.emit(
-        "set-name",
-        userName
-    );
+    socket.emit("set-name",userName);
 
-    socket.emit(
-        "join-room",
-        {
-            roomId,
-            name:userName
-        }
-    );
+    socket.emit("join-room",{
+        roomId,
+        name:userName
+    });
 
     window.scrollTo({
         top:0,
@@ -603,23 +488,23 @@ function updateRoomHeader(){
         return;
     }
 
-    const count=
-        currentRoomState.participants.length;
+    const count=currentRoomState.participants.length;
 
     participantCount.textContent=
         count===1
             ?"1 participant"
             :`${count} participants`;
 
-    roomLiveCount.textContent=
-        count>0
-            ?"LIVE"
-            :"EMPTY";
+    if(roomLiveCount){
+        roomLiveCount.textContent=
+            count>0
+                ?"LIVE"
+                :"EMPTY";
+    }
 
-    const me=
-        currentRoomState.participants.find(
-            user=>user.id===socket.id
-        );
+    const me=currentRoomState.participants.find(
+        user=>user.id===socket.id
+    );
 
     if(me){
         currentRole=me.role;
@@ -628,15 +513,12 @@ function updateRoomHeader(){
 
     if(isHost){
         roomRole.textContent="Host";
-
         hostPanel.style.display="block";
     }else if(currentRole==="speaker"){
         roomRole.textContent="Speaker";
-
         hostPanel.style.display="none";
     }else{
         roomRole.textContent="Listener";
-
         hostPanel.style.display="none";
     }
 
@@ -670,139 +552,81 @@ function renderParticipants(){
         return;
     }
 
-    currentRoomState.participants.forEach(
-        user=>{
-            const person=document.createElement(
-                "div"
-            );
+    currentRoomState.participants.forEach(user=>{
+        const person=document.createElement("div");
+        person.className="person";
 
-            person.className="person";
+        const info=document.createElement("div");
+        const name=document.createElement("div");
 
-            const info=document.createElement(
-                "div"
-            );
+        name.className="person-name";
+        name.textContent=
+            user.name+
+            (user.id===socket.id?" (you)":"");
 
-            const name=document.createElement(
-                "div"
-            );
+        const role=document.createElement("div");
+        role.className="person-role";
 
-            name.className="person-name";
+        if(user.isHost){
+            role.textContent="Host · Speaker";
+        }else if(user.role==="speaker"){
+            role.textContent=
+                user.muted
+                    ?"Speaker · Muted"
+                    :"Speaker";
+        }else{
+            role.textContent="Listener";
+        }
 
-            name.textContent=
-                user.name+
-                (
-                    user.id===socket.id
-                        ?" (you)"
-                        :""
-                );
+        info.appendChild(name);
+        info.appendChild(role);
+        person.appendChild(info);
 
-            const role=document.createElement(
-                "div"
-            );
+        if(isHost&&user.id!==socket.id){
+            const actions=document.createElement("div");
+            actions.className="person-actions";
 
-            role.className="person-role";
-
-            if(user.isHost){
-                role.textContent=
-                    "Host · Speaker";
-            }else if(
-                user.role==="speaker"
-            ){
-                role.textContent=
+            if(user.role==="speaker"){
+                const mute=document.createElement("button");
+                mute.className="small-button";
+                mute.textContent=
                     user.muted
-                        ?"Speaker · Muted"
-                        :"Speaker";
-            }else{
-                role.textContent=
-                    "Listener";
-            }
+                        ?"Unmute"
+                        :"Mute";
 
-            info.appendChild(name);
-            info.appendChild(role);
-
-            person.appendChild(info);
-
-            if(
-                isHost&&
-                user.id!==socket.id
-            ){
-                const actions=
-                    document.createElement(
-                        "div"
-                    );
-
-                actions.className=
-                    "person-actions";
-
-                if(user.role==="speaker"){
-                    const mute=
-                        document.createElement(
-                            "button"
-                        );
-
-                    mute.className=
-                        "small-button";
-
-                    mute.textContent=
+                mute.addEventListener("click",()=>{
+                    socket.emit(
                         user.muted
-                            ?"Unmute"
-                            :"Mute";
-
-                    mute.addEventListener(
-                        "click",
-                        ()=>{
-                            if(user.muted){
-                                socket.emit(
-                                    "unmute-participant",
-                                    {
-                                        targetId:user.id
-                                    }
-                                );
-                            }else{
-                                socket.emit(
-                                    "mute-participant",
-                                    {
-                                        targetId:user.id
-                                    }
-                                );
-                            }
+                            ?"unmute-participant"
+                            :"mute-participant",
+                        {
+                            targetId:user.id
                         }
                     );
+                });
 
-                    actions.appendChild(mute);
-                }
-
-                const remove=
-                    document.createElement(
-                        "button"
-                    );
-
-                remove.className=
-                    "small-button";
-
-                remove.textContent=
-                    "Remove";
-
-                remove.addEventListener(
-                    "click",
-                    ()=>{
-                        socket.emit(
-                            "remove-participant",
-                            {
-                                targetId:user.id
-                            }
-                        );
-                    }
-                );
-
-                actions.appendChild(remove);
-
-                person.appendChild(actions);
+                actions.appendChild(mute);
             }
 
-            speakers.appendChild(person);
+            const remove=document.createElement("button");
+            remove.className="small-button";
+            remove.textContent="Remove";
+
+            remove.addEventListener("click",()=>{
+                socket.emit(
+                    "remove-participant",
+                    {
+                        targetId:user.id
+                    }
+                );
+            });
+
+            actions.appendChild(remove);
+            person.appendChild(actions);
         }
-    );
+
+        speakers.appendChild(person);
+    });
 }
 
 function renderRequests(){
@@ -812,14 +636,9 @@ function renderRequests(){
         return;
     }
 
-    const empty=document.createElement(
-        "div"
-    );
-
+    const empty=document.createElement("div");
     empty.className="room-empty";
-
-    empty.textContent=
-        "No pending requests.";
+    empty.textContent="No pending requests.";
 
     requests.appendChild(empty);
 }
@@ -837,78 +656,45 @@ function addJoinRequest(request){
         return;
     }
 
-    const item=document.createElement(
-        "div"
-    );
-
+    const item=document.createElement("div");
     item.className="request";
+    item.dataset.requestId=request.id;
 
-    item.dataset.requestId=
-        request.id;
+    const text=document.createElement("div");
+    text.textContent=`${request.name} wants to join.`;
 
-    const text=document.createElement(
-        "div"
-    );
+    const actions=document.createElement("div");
+    actions.className="request-actions";
 
-    text.textContent=
-        request.name+
-        " wants to join.";
+    const approve=document.createElement("button");
+    approve.className="small-button";
+    approve.textContent="Accept";
 
-    const actions=
-        document.createElement("div");
-
-    actions.className=
-        "request-actions";
-
-    const approve=
-        document.createElement(
-            "button"
+    approve.addEventListener("click",()=>{
+        socket.emit(
+            "approve-join",
+            {
+                requestId:request.id
+            }
         );
 
-    approve.className=
-        "small-button";
+        item.remove();
+    });
 
-    approve.textContent=
-        "Accept";
+    const reject=document.createElement("button");
+    reject.className="small-button";
+    reject.textContent="Reject";
 
-    approve.addEventListener(
-        "click",
-        ()=>{
-            socket.emit(
-                "approve-join",
-                {
-                    requestId:request.id
-                }
-            );
-
-            item.remove();
-        }
-    );
-
-    const reject=
-        document.createElement(
-            "button"
+    reject.addEventListener("click",()=>{
+        socket.emit(
+            "reject-join",
+            {
+                requestId:request.id
+            }
         );
 
-    reject.className=
-        "small-button";
-
-    reject.textContent=
-        "Reject";
-
-    reject.addEventListener(
-        "click",
-        ()=>{
-            socket.emit(
-                "reject-join",
-                {
-                    requestId:request.id
-                }
-            );
-
-            item.remove();
-        }
-    );
+        item.remove();
+    });
 
     actions.appendChild(approve);
     actions.appendChild(reject);
@@ -932,78 +718,45 @@ function addSpeakRequest(request){
         return;
     }
 
-    const item=document.createElement(
-        "div"
-    );
-
+    const item=document.createElement("div");
     item.className="request";
+    item.dataset.speakId=request.id;
 
-    item.dataset.speakId=
-        request.id;
+    const text=document.createElement("div");
+    text.textContent=`${request.name} wants to speak.`;
 
-    const text=document.createElement(
-        "div"
-    );
+    const actions=document.createElement("div");
+    actions.className="request-actions";
 
-    text.textContent=
-        request.name+
-        " wants to speak.";
+    const approve=document.createElement("button");
+    approve.className="small-button";
+    approve.textContent="Allow";
 
-    const actions=
-        document.createElement("div");
-
-    actions.className=
-        "request-actions";
-
-    const approve=
-        document.createElement(
-            "button"
+    approve.addEventListener("click",()=>{
+        socket.emit(
+            "approve-speak",
+            {
+                targetId:request.id
+            }
         );
 
-    approve.className=
-        "small-button";
+        item.remove();
+    });
 
-    approve.textContent=
-        "Allow";
+    const reject=document.createElement("button");
+    reject.className="small-button";
+    reject.textContent="Reject";
 
-    approve.addEventListener(
-        "click",
-        ()=>{
-            socket.emit(
-                "approve-speak",
-                {
-                    targetId:request.id
-                }
-            );
-
-            item.remove();
-        }
-    );
-
-    const reject=
-        document.createElement(
-            "button"
+    reject.addEventListener("click",()=>{
+        socket.emit(
+            "reject-speak",
+            {
+                targetId:request.id
+            }
         );
 
-    reject.className=
-        "small-button";
-
-    reject.textContent=
-        "Reject";
-
-    reject.addEventListener(
-        "click",
-        ()=>{
-            socket.emit(
-                "reject-speak",
-                {
-                    targetId:request.id
-                }
-            );
-
-            item.remove();
-        }
-    );
+        item.remove();
+    });
 
     actions.appendChild(approve);
     actions.appendChild(reject);
@@ -1019,71 +772,37 @@ function resetChat(){
 }
 
 function addChatMessage(data){
-    const message=document.createElement(
-        "div"
-    );
+    const message=document.createElement("div");
+    message.className="chat-message";
 
-    message.className=
-        "chat-message";
+    const name=document.createElement("div");
+    name.className="chat-name";
+    name.textContent=data.name;
 
-    const name=document.createElement(
-        "div"
-    );
+    const text=document.createElement("div");
+    text.className="chat-text";
+    text.textContent=data.message;
 
-    name.className=
-        "chat-name";
-
-    name.textContent=
-        data.name;
-
-    const text=document.createElement(
-        "div"
-    );
-
-    text.className=
-        "chat-text";
-
-    text.textContent=
-        data.message;
-
-    const time=document.createElement(
-        "div"
-    );
-
-    time.className=
-        "chat-time";
-
-    time.textContent=
-        data.time;
+    const time=document.createElement("div");
+    time.className="chat-time";
+    time.textContent=data.time;
 
     message.appendChild(name);
     message.appendChild(text);
     message.appendChild(time);
 
-    chatMessages.appendChild(
-        message
-    );
-
-    chatMessages.scrollTop=
-        chatMessages.scrollHeight;
+    chatMessages.appendChild(message);
+    chatMessages.scrollTop=chatMessages.scrollHeight;
 }
 
 function sendMessage(){
-    const message=
-        chatInput.value.trim();
+    const message=chatInput.value.trim();
 
-    if(
-        !message||
-        !currentRoomId
-    ){
+    if(!message||!currentRoomId){
         return;
     }
 
-    socket.emit(
-        "send-message",
-        message
-    );
-
+    socket.emit("send-message",message);
     chatInput.value="";
 }
 
@@ -1104,29 +823,22 @@ async function ensureMicrophone(){
 
     try{
         localStream=
-            await navigator.mediaDevices
-                .getUserMedia({
-                    audio:true,
-                    video:false
-                });
+            await navigator.mediaDevices.getUserMedia({
+                audio:true,
+                video:false
+            });
 
         localStream
             .getAudioTracks()
             .forEach(track=>{
-                track.enabled=
-                    !isMicMuted;
+                track.enabled=!isMicMuted;
             });
 
-        micStatus.textContent=
-            "Microphone is ready.";
+        micStatus.textContent="Microphone is ready.";
 
         await rebuildPeers();
-
     }catch(error){
-        console.error(
-            "Microphone error:",
-            error
-        );
+        console.error("Microphone error:",error);
 
         micStatus.textContent=
             "Microphone permission was not granted.";
@@ -1141,18 +853,15 @@ async function ensureMicrophone(){
 function toggleMicrophone(){
     if(!localStream){
         ensureMicrophone();
-
         return;
     }
 
-    isMicMuted=
-        !isMicMuted;
+    isMicMuted=!isMicMuted;
 
     localStream
         .getAudioTracks()
         .forEach(track=>{
-            track.enabled=
-                !isMicMuted;
+            track.enabled=!isMicMuted;
         });
 
     micButton.textContent=
@@ -1166,22 +875,122 @@ function toggleMicrophone(){
             :"Microphone is active.";
 }
 
+function createPeerConnection(peerId){
+    const pc=new RTCPeerConnection({
+        iceServers:[
+            {
+                urls:"stun:stun.l.google.com:19302"
+            }
+        ]
+    });
+
+    peers.set(peerId,pc);
+
+    pc.onicecandidate=event=>{
+        if(event.candidate){
+            socket.emit("webrtc-ice",{
+                target:peerId,
+                candidate:event.candidate
+            });
+        }
+    };
+
+    pc.ontrack=event=>{
+        const stream=event.streams?.[0];
+
+        if(!stream){
+            return;
+        }
+
+        let audio=remoteAudios.get(peerId);
+
+        if(!audio){
+            audio=document.createElement("audio");
+            audio.autoplay=true;
+            audio.playsInline=true;
+            audio.style.display="none";
+
+            document.body.appendChild(audio);
+            remoteAudios.set(peerId,audio);
+        }
+
+        if(audio.srcObject!==stream){
+            audio.srcObject=stream;
+        }
+
+        audio.play().catch(error=>{
+            console.warn(
+                "Remote audio playback was blocked:",
+                error
+            );
+        });
+    };
+
+    pc.onconnectionstatechange=()=>{
+        console.log(
+            "WebRTC connection",
+            peerId,
+            pc.connectionState
+        );
+
+        if(
+            pc.connectionState==="failed"||
+            pc.connectionState==="closed"
+        ){
+            closePeer(peerId);
+        }
+    };
+
+    pc.oniceconnectionstatechange=()=>{
+        console.log(
+            "WebRTC ICE",
+            peerId,
+            pc.iceConnectionState
+        );
+    };
+
+    if(currentRole==="speaker"&&localStream){
+        localStream
+            .getAudioTracks()
+            .forEach(track=>{
+                pc.addTrack(
+                    track,
+                    localStream
+                );
+            });
+    }else{
+        pc.addTransceiver("audio",{
+            direction:"recvonly"
+        });
+    }
+
+    return pc;
+}
+
 function closePeer(peerId){
     const pc=peers.get(peerId);
 
     if(pc){
+        pc.ontrack=null;
         pc.close();
-
         peers.delete(peerId);
     }
+
+    const audio=remoteAudios.get(peerId);
+
+    if(audio){
+        audio.srcObject=null;
+        audio.remove();
+        remoteAudios.delete(peerId);
+    }
+
+    pendingIceCandidates.delete(peerId);
 }
 
 function closeAllPeers(){
-    peers.forEach(pc=>{
-        pc.close();
+    [...peers.keys()].forEach(peerId=>{
+        closePeer(peerId);
     });
-
-    peers.clear();
 }
 
 function shouldConnectTo(user){
@@ -1200,30 +1009,19 @@ async function rebuildPeers(){
         return;
     }
 
-    const validIds=
-        new Set(
-            currentRoomState
-                .participants
-                .filter(
-                    user=>shouldConnectTo(user)
-                )
-                .map(
-                    user=>user.id
-                )
-        );
+    const validIds=new Set(
+        currentRoomState.participants
+            .filter(user=>shouldConnectTo(user))
+            .map(user=>user.id)
+    );
 
-    [
-        ...peers.keys()
-    ].forEach(id=>{
+    [...peers.keys()].forEach(id=>{
         if(!validIds.has(id)){
             closePeer(id);
         }
     });
 
-    for(
-        const user
-        of currentRoomState.participants
-    ){
+    for(const user of currentRoomState.participants){
         if(!shouldConnectTo(user)){
             continue;
         }
@@ -1232,256 +1030,68 @@ async function rebuildPeers(){
             continue;
         }
 
-        await createPeer(user);
+        const shouldOffer=socket.id<user.id;
+        const pc=createPeerConnection(user.id);
+
+        if(shouldOffer){
+            try{
+                const offer=await pc.createOffer();
+
+                await pc.setLocalDescription(offer);
+
+                socket.emit("webrtc-offer",{
+                    target:user.id,
+                    offer:pc.localDescription
+                });
+            }catch(error){
+                console.error(
+                    "Offer error:",
+                    error
+                );
+
+                closePeer(user.id);
+            }
+        }
     }
 }
 
-function createPeer(user){
-    return new Promise(
-        async resolve=>{
-            const pc=
-                new RTCPeerConnection({
-                    iceServers:[
-                        {
-                            urls:
-                                "stun:stun.l.google.com:19302"
-                        }
-                    ]
-                });
-
-            peers.set(
-                user.id,
-                pc
-            );
-
-            pc.onicecandidate=
-                event=>{
-                    if(event.candidate){
-                        socket.emit(
-                            "webrtc-ice",
-                            {
-                                target:user.id,
-                                candidate:
-                                    event.candidate
-                            }
-                        );
-                    }
-                };
-
-            pc.ontrack=
-                event=>{
-                    if(
-                        event.streams&&
-                        event.streams[0]
-                    ){
-                        remoteAudio.srcObject=
-                            event.streams[0];
-
-                        remoteAudio
-                            .play()
-                            .catch(
-                                ()=>{}
-                            );
-                    }
-                };
-
-            pc.onconnectionstatechange=
-                ()=>{
-                    if(
-                        pc.connectionState===
-                            "failed"||
-                        pc.connectionState===
-                            "closed"
-                    ){
-                        closePeer(
-                            user.id
-                        );
-                    }
-                };
-
-            if(
-                currentRole==="speaker"&&
-                localStream
-            ){
-                localStream
-                    .getTracks()
-                    .forEach(
-                        track=>{
-                            pc.addTrack(
-                                track,
-                                localStream
-                            );
-                        }
-                    );
-            }else{
-                pc.addTransceiver(
-                    "audio",
-                    {
-                        direction:
-                            "recvonly"
-                    }
-                );
-            }
-
-            const shouldOffer=
-                socket.id<
-                user.id;
-
-            if(shouldOffer){
-                try{
-                    const offer=
-                        await pc.createOffer();
-
-                    await pc.setLocalDescription(
-                        offer
-                    );
-
-                    socket.emit(
-                        "webrtc-offer",
-                        {
-                            target:user.id,
-                            offer:
-                                pc.localDescription
-                        }
-                    );
-                }catch(error){
-                    console.error(
-                        "Offer error:",
-                        error
-                    );
-                }
-            }
-
-            resolve();
-        }
-    );
-}
-
 async function handleOffer(data){
-    let pc=peers.get(
-        data.from
-    );
+    let pc=peers.get(data.from);
 
     if(!pc){
-        const user=
-            currentRoomState
-                ?.participants
-                .find(
-                    participant=>
-                        participant.id===
-                        data.from
-                );
+        const user=currentRoomState?.participants.find(
+            participant=>participant.id===data.from
+        );
 
         if(!user){
             return;
         }
 
-        pc=
-            new RTCPeerConnection({
-                iceServers:[
-                    {
-                        urls:
-                            "stun:stun.l.google.com:19302"
-                    }
-                ]
-            });
-
-        peers.set(
-            data.from,
-            pc
-        );
-
-        pc.onicecandidate=
-            event=>{
-                if(event.candidate){
-                    socket.emit(
-                        "webrtc-ice",
-                        {
-                            target:data.from,
-                            candidate:
-                                event.candidate
-                        }
-                    );
-                }
-            };
-
-        pc.ontrack=
-            event=>{
-                if(
-                    event.streams&&
-                    event.streams[0]
-                ){
-                    remoteAudio.srcObject=
-                        event.streams[0];
-
-                    remoteAudio
-                        .play()
-                        .catch(
-                            ()=>{}
-                        );
-                }
-            };
-
-        pc.onconnectionstatechange=
-            ()=>{
-                if(
-                    pc.connectionState===
-                        "failed"||
-                    pc.connectionState===
-                        "closed"
-                ){
-                    closePeer(
-                        data.from
-                    );
-                }
-            };
-
-        if(
-            currentRole==="speaker"&&
-            localStream
-        ){
-            localStream
-                .getTracks()
-                .forEach(
-                    track=>{
-                        pc.addTrack(
-                            track,
-                            localStream
-                        );
-                    }
-                );
-        }else{
-            pc.addTransceiver(
-                "audio",
-                {
-                    direction:
-                        "recvonly"
-                }
-            );
-        }
+        pc=createPeerConnection(data.from);
     }
 
     try{
         await pc.setRemoteDescription(
-            data.offer
+            new RTCSessionDescription(data.offer)
         );
 
-        const answer=
-            await pc.createAnswer();
+        const pending=
+            pendingIceCandidates.get(data.from)||[];
 
-        await pc.setLocalDescription(
-            answer
-        );
+        for(const candidate of pending){
+            await pc.addIceCandidate(candidate);
+        }
 
-        socket.emit(
-            "webrtc-answer",
-            {
-                target:data.from,
-                answer:
-                    pc.localDescription
-            }
-        );
+        pendingIceCandidates.delete(data.from);
 
+        const answer=await pc.createAnswer();
+
+        await pc.setLocalDescription(answer);
+
+        socket.emit("webrtc-answer",{
+            target:data.from,
+            answer:pc.localDescription
+        });
     }catch(error){
         console.error(
             "Offer handling error:",
@@ -1491,10 +1101,7 @@ async function handleOffer(data){
 }
 
 async function handleAnswer(data){
-    const pc=
-        peers.get(
-            data.from
-        );
+    const pc=peers.get(data.from);
 
     if(!pc){
         return;
@@ -1502,8 +1109,17 @@ async function handleAnswer(data){
 
     try{
         await pc.setRemoteDescription(
-            data.answer
+            new RTCSessionDescription(data.answer)
         );
+
+        const pending=
+            pendingIceCandidates.get(data.from)||[];
+
+        for(const candidate of pending){
+            await pc.addIceCandidate(candidate);
+        }
+
+        pendingIceCandidates.delete(data.from);
     }catch(error){
         console.error(
             "Answer error:",
@@ -1513,19 +1129,38 @@ async function handleAnswer(data){
 }
 
 async function handleIce(data){
-    const pc=
-        peers.get(
-            data.from
-        );
+    const pc=peers.get(data.from);
 
     if(!pc){
+        const pending=
+            pendingIceCandidates.get(data.from)||[];
+
+        pending.push(data.candidate);
+
+        pendingIceCandidates.set(
+            data.from,
+            pending
+        );
+
         return;
     }
 
     try{
-        await pc.addIceCandidate(
-            data.candidate
-        );
+        if(pc.remoteDescription){
+            await pc.addIceCandidate(
+                data.candidate
+            );
+        }else{
+            const pending=
+                pendingIceCandidates.get(data.from)||[];
+
+            pending.push(data.candidate);
+
+            pendingIceCandidates.set(
+                data.from,
+                pending
+            );
+        }
     }catch(error){
         console.error(
             "ICE error:",
@@ -1536,9 +1171,7 @@ async function handleIce(data){
 
 function leaveRoom(){
     if(currentRoomId){
-        socket.emit(
-            "leave-room"
-        );
+        socket.emit("leave-room");
     }
 
     cleanupRoom();
@@ -1550,11 +1183,9 @@ function cleanupRoom(){
     if(localStream){
         localStream
             .getTracks()
-            .forEach(
-                track=>{
-                    track.stop();
-                }
-            );
+            .forEach(track=>{
+                track.stop();
+            });
 
         localStream=null;
     }
@@ -1568,11 +1199,8 @@ function cleanupRoom(){
     roomScreen.style.display="none";
     homeScreen.style.display="block";
 
-    micButton.textContent=
-        "Mute microphone";
-
+    micButton.textContent="Mute microphone";
     micStatus.textContent="";
-
     requests.innerHTML="";
 
     loadRooms();
@@ -1593,9 +1221,7 @@ function endRoom(){
         "The conversation will close for everyone."
     );
 
-    socket.emit(
-        "end-room"
-    );
+    socket.emit("end-room");
 }
 
 function copyInvite(){
@@ -1604,12 +1230,9 @@ function copyInvite(){
     }
 
     navigator.clipboard
-        .writeText(
-            inviteLink.value
-        )
+        .writeText(inviteLink.value)
         .then(()=>{
-            copyInviteButton.textContent=
-                "Copied";
+            copyInviteButton.textContent="Copied";
 
             showToast(
                 "Invite copied",
@@ -1617,355 +1240,240 @@ function copyInvite(){
             );
 
             setTimeout(()=>{
-                copyInviteButton.textContent=
-                    "Copy";
+                copyInviteButton.textContent="Copy";
             },1500);
         })
         .catch(()=>{
             inviteLink.select();
+            document.execCommand("copy");
 
-            document.execCommand(
-                "copy"
-            );
-
-            copyInviteButton.textContent=
-                "Copied";
+            copyInviteButton.textContent="Copied";
 
             setTimeout(()=>{
-                copyInviteButton.textContent=
-                    "Copy";
+                copyInviteButton.textContent="Copy";
             },1500);
         });
 }
 
-socket.on(
-    "room-state",
-    state=>{
-        if(
-            !currentRoomId||
-            state.roomId!==currentRoomId
-        ){
-            return;
-        }
-
-        currentRoomState=state;
-
-        updateRoomHeader();
-
-        rebuildPeers();
+socket.on("room-state",state=>{
+    if(
+        !currentRoomId||
+        state.roomId!==currentRoomId
+    ){
+        return;
     }
-);
 
-socket.on(
-    "joined-room",
-    data=>{
-        currentRoomId=
-            data.roomId;
+    currentRoomState=state;
 
-        currentRole=
-            data.role;
+    updateRoomHeader();
+    rebuildPeers();
+});
 
-        isHost=
-            data.isHost;
+socket.on("joined-room",data=>{
+    currentRoomId=data.roomId;
+    currentRole=data.role;
+    isHost=data.isHost;
 
-        roomRole.textContent=
-            isHost
-                ?"Host"
-                :currentRole==="speaker"
-                    ?"Speaker"
-                    :"Listener";
+    roomRole.textContent=
+        isHost
+            ?"Host"
+            :currentRole==="speaker"
+                ?"Speaker"
+                :"Listener";
 
-        if(
-            isHost||
-            currentRole==="speaker"
-        ){
-            ensureMicrophone();
-        }
+    if(
+        isHost||
+        currentRole==="speaker"
+    ){
+        ensureMicrophone();
     }
-);
+});
 
-socket.on(
-    "join-approved",
-    data=>{
-        currentRoomId=
-            data.roomId;
+socket.on("join-approved",data=>{
+    currentRoomId=data.roomId;
+    currentRole=data.role;
+    isHost=false;
 
-        currentRole=
-            data.role;
+    homeScreen.style.display="none";
+    roomScreen.style.display="block";
 
-        isHost=false;
+    roomTitle.textContent=data.roomName;
+    roomVisibilityLabel.textContent="PRIVATE ROOM";
+    roomRole.textContent="Listener";
 
-        homeScreen.style.display=
-            "none";
+    inviteLink.value=
+        createInviteLink(data.roomId);
 
-        roomScreen.style.display=
-            "block";
+    resetChat();
 
-        roomTitle.textContent=
-            data.roomName;
+    showToast(
+        "You're in",
+        "The host approved your request."
+    );
+});
 
-        roomVisibilityLabel.textContent=
-            "PRIVATE ROOM";
+socket.on("join-rejected",message=>{
+    showToast(
+        "Request declined",
+        message
+    );
+});
 
-        roomRole.textContent=
-            "Listener";
+socket.on("request-sent",data=>{
+    showToast(
+        "Request sent",
+        data.message
+    );
+});
 
-        inviteLink.value=
-            createInviteLink(
-                data.roomId
-            );
+socket.on("speak-request-sent",message=>{
+    showToast(
+        "Request sent",
+        message
+    );
+});
 
-        resetChat();
+socket.on("private-room",()=>{
+    showToast(
+        "Private room",
+        "Request access from the host to enter."
+    );
+});
 
-        showToast(
-            "You're in",
-            "The host approved your request."
-        );
+socket.on("action-error",message=>{
+    showToast(
+        "Something went wrong",
+        message
+    );
+});
+
+socket.on("join-request",request=>{
+    addJoinRequest(request);
+
+    showToast(
+        "New join request",
+        `${request.name} wants to join.`
+    );
+});
+
+socket.on("speak-request",request=>{
+    addSpeakRequest(request);
+
+    showToast(
+        "Speaking request",
+        `${request.name} wants to speak.`
+    );
+});
+
+socket.on("speaker-approved",async()=>{
+    currentRole="speaker";
+
+    showToast(
+        "You can speak now",
+        "The host approved your speaking request."
+    );
+
+    closeAllPeers();
+
+    await ensureMicrophone();
+});
+
+socket.on("speaker-rejected",message=>{
+    showToast(
+        "Request declined",
+        message
+    );
+});
+
+socket.on("force-muted",()=>{
+    if(localStream){
+        localStream
+            .getAudioTracks()
+            .forEach(track=>{
+                track.enabled=false;
+            });
     }
-);
 
-socket.on(
-    "join-rejected",
-    message=>{
-        showToast(
-            "Request declined",
-            message
-        );
+    isMicMuted=true;
+    micButton.textContent="Unmute microphone";
+    micStatus.textContent="You were muted by the host.";
+
+    showToast(
+        "Microphone muted",
+        "The host muted your microphone."
+    );
+});
+
+socket.on("force-unmuted",()=>{
+    if(localStream){
+        localStream
+            .getAudioTracks()
+            .forEach(track=>{
+                track.enabled=true;
+            });
     }
-);
 
-socket.on(
-    "request-sent",
-    data=>{
-        showToast(
-            "Request sent",
-            data.message
-        );
-    }
-);
+    isMicMuted=false;
+    micButton.textContent="Mute microphone";
+    micStatus.textContent="Your microphone is active.";
 
-socket.on(
-    "speak-request-sent",
-    message=>{
-        showToast(
-            "Request sent",
-            message
-        );
-    }
-);
+    showToast(
+        "Microphone unmuted",
+        "Your microphone is active again."
+    );
+});
 
-socket.on(
-    "private-room",
-    ()=>{
-        showToast(
-            "Private room",
-            "Request access from the host to enter."
-        );
-    }
-);
+socket.on("removed-from-room",message=>{
+    showToast(
+        "Removed from room",
+        message
+    );
 
-socket.on(
-    "action-error",
-    message=>{
-        showToast(
-            "Something went wrong",
-            message
-        );
-    }
-);
+    cleanupRoom();
+});
 
-socket.on(
-    "join-request",
-    request=>{
-        addJoinRequest(
-            request
-        );
+socket.on("room-ended",()=>{
+    showToast(
+        "Room ended",
+        "The host ended this conversation."
+    );
 
-        showToast(
-            "New join request",
-            `${request.name} wants to join.`
-        );
-    }
-);
+    cleanupRoom();
+});
 
-socket.on(
-    "speak-request",
-    request=>{
-        addSpeakRequest(
-            request
-        );
+socket.on("new-message",data=>{
+    addChatMessage(data);
+});
 
-        showToast(
-            "Speaking request",
-            `${request.name} wants to speak.`
-        );
-    }
-);
+socket.on("participant-count",count=>{
+    participantCount.textContent=
+        count===1
+            ?"1 participant"
+            :`${count} participants`;
 
-socket.on(
-    "speaker-approved",
-    async()=>{
-        currentRole=
-            "speaker";
-
-        showToast(
-            "You can speak now",
-            "The host approved your speaking request."
-        );
-
-        closeAllPeers();
-
-        await ensureMicrophone();
-    }
-);
-
-socket.on(
-    "speaker-rejected",
-    message=>{
-        showToast(
-            "Request declined",
-            message
-        );
-    }
-);
-
-socket.on(
-    "force-muted",
-    ()=>{
-        if(localStream){
-            localStream
-                .getAudioTracks()
-                .forEach(
-                    track=>{
-                        track.enabled=
-                            false;
-                    }
-                );
-        }
-
-        isMicMuted=true;
-
-        micButton.textContent=
-            "Unmute microphone";
-
-        micStatus.textContent=
-            "You were muted by the host.";
-
-        showToast(
-            "Microphone muted",
-            "The host muted your microphone."
-        );
-    }
-);
-
-socket.on(
-    "force-unmuted",
-    ()=>{
-        if(localStream){
-            localStream
-                .getAudioTracks()
-                .forEach(
-                    track=>{
-                        track.enabled=
-                            true;
-                    }
-                );
-        }
-
-        isMicMuted=false;
-
-        micButton.textContent=
-            "Mute microphone";
-
-        micStatus.textContent=
-            "Your microphone is active.";
-
-        showToast(
-            "Microphone unmuted",
-            "Your microphone is active again."
-        );
-    }
-);
-
-socket.on(
-    "removed-from-room",
-    message=>{
-        showToast(
-            "Removed from room",
-            message
-        );
-
-        cleanupRoom();
-    }
-);
-
-socket.on(
-    "room-ended",
-    ()=>{
-        showToast(
-            "Room ended",
-            "The host ended this conversation."
-        );
-
-        cleanupRoom();
-    }
-);
-
-socket.on(
-    "new-message",
-    data=>{
-        addChatMessage(
-            data
-        );
-    }
-);
-
-socket.on(
-    "participant-count",
-    count=>{
-        participantCount.textContent=
-            count===1
-                ?"1 participant"
-                :`${count} participants`;
-
+    if(roomLiveCount){
         roomLiveCount.textContent=
             count>0
                 ?"LIVE"
                 :"EMPTY";
     }
-);
+});
 
-socket.on(
-    "rooms-updated",
-    ()=>{
-        if(!currentRoomId){
-            loadRooms();
-        }
+socket.on("rooms-updated",()=>{
+    if(!currentRoomId){
+        loadRooms();
     }
-);
+});
 
-socket.on(
-    "webrtc-offer",
-    handleOffer
-);
-
-socket.on(
-    "webrtc-answer",
-    handleAnswer
-);
-
-socket.on(
-    "webrtc-ice",
-    handleIce
-);
+socket.on("webrtc-offer",handleOffer);
+socket.on("webrtc-answer",handleAnswer);
+socket.on("webrtc-ice",handleIce);
 
 openCreateButton.addEventListener(
     "click",
     ()=>{
         askName(()=>{
-            openModal(
-                createModal
-            );
+            openModal(createModal);
 
             setTimeout(()=>{
                 roomNameInput.focus();
@@ -1977,19 +1485,14 @@ openCreateButton.addEventListener(
 closeCreateButton.addEventListener(
     "click",
     ()=>{
-        closeModal(
-            createModal
-        );
+        closeModal(createModal);
     }
 );
 
 closeNameModal.addEventListener(
     "click",
     ()=>{
-        closeModal(
-            nameModal
-        );
-
+        closeModal(nameModal);
         pendingAction=null;
     }
 );
@@ -2008,29 +1511,21 @@ nameInput.addEventListener(
     }
 );
 
-visibilityOptions.forEach(
-    option=>{
-        option.addEventListener(
-            "click",
-            ()=>{
-                visibilityOptions.forEach(
-                    item=>{
-                        item.classList.remove(
-                            "active"
-                        );
-                    }
-                );
+visibilityOptions.forEach(option=>{
+    option.addEventListener(
+        "click",
+        ()=>{
+            visibilityOptions.forEach(item=>{
+                item.classList.remove("active");
+            });
 
-                option.classList.add(
-                    "active"
-                );
+            option.classList.add("active");
 
-                selectedVisibility=
-                    option.dataset.visibility;
-            }
-        );
-    }
-);
+            selectedVisibility=
+                option.dataset.visibility;
+        }
+    );
+});
 
 refreshRoomsButton.addEventListener(
     "click",
@@ -2112,9 +1607,7 @@ requestSpeakButton.addEventListener(
             return;
         }
 
-        socket.emit(
-            "request-speak"
-        );
+        socket.emit("request-speak");
 
         requestSpeakButton.disabled=true;
 
@@ -2128,9 +1621,7 @@ window.addEventListener(
     "beforeunload",
     ()=>{
         if(currentRoomId){
-            socket.emit(
-                "leave-room"
-            );
+            socket.emit("leave-room");
         }
     }
 );
@@ -2140,8 +1631,7 @@ const urlParams=
         window.location.search
     );
 
-const invitedRoom=
-    urlParams.get("room");
+const invitedRoom=urlParams.get("room");
 
 if(invitedRoom){
     joinRoomInput.value=
