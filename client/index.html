@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width,initial-scale=1.0">
+     <title>Talkies</title>
+     <link rel="icon" class="logo-image" type="image/png" href="../images/circle-with-border.png">
+     <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+     <div id="intro">
+          <div class="intro-content">
+               <div class="intro-mark">T</div>
+               <div class="intro-name">Talkies</div>
+               <div class="intro-text">Conversations happening now.</div>
+               <div class="intro-loader">
+                    <span></span>
+               </div>
+          </div>
+     </div>
+
+     <main class="page">
+
+          <header>
+               <a class="logo" href="#">Talkies</a>
+
+               <div class="status">
+                    <span></span>
+                    LIVE
+               </div>
+          </header>
+
+          <section id="homeScreen">
+
+               <section class="hero">
+                    <div class="eyebrow">LIVE AUDIO PLATFORM</div>
+
+                    <h1>
+                         Come in.<br>
+                         Start talking.
+                    </h1>
+
+                    <p>
+                         Join conversations happening right now,
+                         meet people around a topic, or create your own room.
+                    </p>
+
+                    <div class="hero-actions">
+                         <button class="button primary" id="openCreate">
+                              Start a room
+                         </button>
+
+                         <button class="button secondary" id="focusJoin">
+                              Join with ID
+                         </button>
+                    </div>
+               </section>
+
+               <section class="live-section">
+
+                    <div class="section-header">
+                         <div>
+                              <div class="section-kicker">HAPPENING NOW</div>
+                              <h2>Live rooms</h2>
+                         </div>
+
+                         <button class="refresh-button" id="refreshRooms">
+                              Refresh
+                         </button>
+                    </div>
+
+                    <div id="roomsList" class="rooms">
+                         <div class="loading-room">
+                              <span></span>
+                              <span></span>
+                              <span></span>
+                         </div>
+                    </div>
+
+               </section>
+
+               <section class="join-section" id="joinSection">
+
+                    <div class="join-content">
+
+                         <div>
+                              <div class="section-kicker">HAVE AN INVITE?</div>
+
+                              <h2>
+                                   Enter a room directly.
+                              </h2>
+
+                              <p>
+                                   Use the room ID shared by your host.
+                              </p>
+                         </div>
+
+                         <div class="join-box">
+                              <input type="text" id="joinRoomId" placeholder="ROOM-XXXXX" autocomplete="off">
+
+                              <button class="button primary" id="joinRoom">
+                                   Enter room
+                              </button>
+                         </div>
+
+                    </div>
+
+               </section>
+
+          </section>
+
+          <section id="roomScreen">
+
+               <div class="room-header">
+
+                    <div class="room-heading">
+
+                         <div class="room-label">
+                              <span class="live-dot"></span>
+                              <span id="roomVisibilityLabel">
+                                   PUBLIC ROOM
+                              </span>
+                         </div>
+
+                         <h1 id="roomTitle">
+                              Room
+                         </h1>
+
+                         <div class="room-meta">
+                              <span id="participantCount">
+                                   0 participants
+                              </span>
+
+                              <span class="meta-separator">/</span>
+
+                              <span id="roomRole">
+                                   Listener
+                              </span>
+                         </div>
+
+                    </div>
+
+                    <button class="button secondary leave-button" id="leaveRoom">
+                         Leave
+                    </button>
+
+               </div>
+
+               <div class="room-layout">
+
+                    <section class="room-main">
+
+                         <div class="speaker-area">
+
+                              <div class="panel-heading">
+
+                                   <div>
+                                        <div class="section-kicker">
+                                             IN THE ROOM
+                                        </div>
+
+                                        <h2>
+                                             People
+                                        </h2>
+                                   </div>
+
+                                   <div class="live-count" id="roomLiveCount">
+                                        LIVE
+                                   </div>
+
+                              </div>
+
+                              <div id="speakers" class="speaker-list"></div>
+
+                              <div class="room-controls">
+
+                                   <button class="button primary" id="requestSpeak">
+                                        Request to speak
+                                   </button>
+
+                                   <button class="mic-button" id="micButton" style="display:none;">
+                                        Mute microphone
+                                   </button>
+
+                              </div>
+
+                              <div id="micStatus" class="mic-status"></div>
+
+                         </div>
+
+                         <div class="invite-panel">
+
+                              <div>
+                                   <div class="section-kicker">
+                                        INVITE
+                                   </div>
+
+                                   <h3>
+                                        Bring someone in.
+                                   </h3>
+                              </div>
+
+                              <div class="invite-box">
+
+                                   <input id="inviteLink" readonly>
+
+                                   <button class="button secondary" id="copyInvite">
+                                        Copy
+                                   </button>
+
+                              </div>
+
+                         </div>
+
+                         <div id="hostPanel" class="host-panel" style="display:none;">
+
+                              <div class="panel-heading">
+
+                                   <div>
+                                        <div class="section-kicker">
+                                             HOST
+                                        </div>
+
+                                        <h2>
+                                             Requests
+                                        </h2>
+                                   </div>
+
+                              </div>
+
+                              <div id="requests" class="request-list"></div>
+
+                              <button class="button danger" id="endRoom">
+                                   End room
+                              </button>
+
+                         </div>
+
+                    </section>
+
+                    <aside class="chat-panel">
+
+                         <div class="chat-header">
+
+                              <div>
+                                   <div class="section-kicker">
+                                        LIVE CHAT
+                                   </div>
+
+                                   <h2>
+                                        Chat
+                                   </h2>
+                              </div>
+
+                         </div>
+
+                         <div class="chat">
+
+                              <div id="chatMessages"></div>
+
+                              <div class="chat-input">
+
+                                   <input type="text" id="chatInput" placeholder="Write something..."
+                                        autocomplete="off">
+
+                                   <button id="sendMessage">
+                                        Send
+                                   </button>
+
+                              </div>
+
+                         </div>
+
+                    </aside>
+
+               </div>
+
+          </section>
+
+          <footer>
+               <span>Talkies</span>
+               <span>Live conversations, temporary rooms.</span>
+          </footer>
+
+     </main>
+
+     <div id="nameModal" class="modal-layer">
+
+          <div class="modal">
+
+               <button class="modal-close" id="closeNameModal">
+                    ×
+               </button>
+
+               <div class="modal-kicker">
+                    WELCOME TO TALKIES
+               </div>
+
+               <h2>
+                    What should people call you?
+               </h2>
+
+               <p>
+                    Your name will appear inside rooms and chat.
+               </p>
+
+               <input id="nameInput" type="text" maxlength="30" placeholder="Your name" autocomplete="name">
+
+               <button class="button primary modal-button" id="saveName">
+                    Continue
+               </button>
+
+          </div>
+
+     </div>
+
+     <div id="createModal" class="modal-layer">
+
+          <div class="modal create-modal">
+
+               <button class="modal-close" id="closeCreateModal">
+                    ×
+               </button>
+
+               <div class="modal-kicker">
+                    NEW ROOM
+               </div>
+
+               <h2>
+                    Start a conversation.
+               </h2>
+
+               <p>
+                    Create a temporary room and invite people in.
+               </p>
+
+               <label for="roomName">
+                    Room name
+               </label>
+
+               <input type="text" id="roomName" maxlength="80" placeholder="Movie discussion, late night chat..."
+                    autocomplete="off">
+
+               <label>
+                    Room visibility
+               </label>
+
+               <div class="visibility-options">
+
+                    <button class="visibility-option active" data-visibility="public">
+                         <strong>
+                              Public
+                         </strong>
+
+                         <span>
+                              Anyone can join.
+                         </span>
+                    </button>
+
+                    <button class="visibility-option" data-visibility="private">
+                         <strong>
+                              Private
+                         </strong>
+
+                         <span>
+                              Host approves requests.
+                         </span>
+                    </button>
+
+               </div>
+
+               <button class="button primary modal-button" id="createRoom">
+                    Create room
+               </button>
+
+          </div>
+
+     </div>
+
+     <div id="toastContainer"></div>
+
+     <audio id="remoteAudio" autoplay></audio>
+
+     <script src="/socket.io/socket.io.js"></script>
+     <script src="app.js"></script>
+
+</body>
+
+</html>
